@@ -1,0 +1,14 @@
+{
+   "description": "Enables you to easily find Sencha Ext JS Components from DOM elements and generates various locators for them.",
+   "devtools_page": "devtools.html",
+   "icons": {
+      "128": "scl_128.png",
+      "16": "scl_16.png",
+      "32": "scl_32.png",
+      "48": "scl_48.png",
+      "64": "scl_64.png"
+   },
+   "manifest_version": 2,
+   "name": "Sencha Component Locator",
+   "version": "1.0.0"
+}
