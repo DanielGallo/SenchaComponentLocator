@@ -68,7 +68,7 @@ class ComponentLocator {
         if (this.win.Ext) {
             var ext = this.win.Ext;
 
-            if (ext.versions && ext.versions.ext && ext.versions.ext.major && ext.versions.ext.major >= 4) {
+            if (ext.versions && ext.versions.extjs && ext.versions.extjs.major && ext.versions.extjs.major >= 4) {
                 return true;
             }
         }
