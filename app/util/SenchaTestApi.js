@@ -53,7 +53,7 @@ Ext.define('CL.util.SenchaTestApi', {
             example: `.setValue('Hello world')`
         }]
     }, {
-        xtypes: ['gridpanel', 'grid'],
+        xtypes: ['gridpanel', 'grid', 'treepanel'],
         name: 'Grid',
         className: 'ST.grid',
         future: `ST.grid('{0}')`,

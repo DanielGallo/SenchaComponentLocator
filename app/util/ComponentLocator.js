@@ -83,16 +83,20 @@ class ComponentLocator {
     addLocator(xtypes, locator, container, priority, owningComponent) {
         var me = this,
             owningComponentLocator = null,
-            containerEl, owningComponentEl, locatorTestString, queryResults;
+            containerEl, owningComponentEl, locatorTestString, queryResults, xtype;
 
         if (container && container.xtype) {
             containerEl = container.el;
 
+            // Properly escape and handle XTypes with dots on the containing component
+            xtype = container.xtype.replace('.', '\\\\.');
+
             if (container.getItemId && container.getItemId() != null && container.getItemId() != ''
-                && containerEl && containerEl.id && containerEl.id != container.getItemId()) {
-                locator = container.xtype + '#' + container.getItemId() + ' ' + locator;
+                && containerEl && containerEl.id && containerEl.id != container.getItemId()
+                && container.autoGenId == false) {
+                locator = xtype + '#' + container.getItemId() + ' ' + locator;
             } else {
-                locator = container.xtype + ' ' + locator;
+                locator = xtype + ' ' + locator;
             }
         } else if (container === undefined) {
             // Container has explicitly been passed in, but it's undefined (no container)
@@ -101,12 +105,14 @@ class ComponentLocator {
 
         if (owningComponent && owningComponent.xtype) {
             owningComponentEl = owningComponent.el;
+            xtype = owningComponent.xtype.replace('.', '\\\\.');
 
             if (owningComponent.getItemId && owningComponent.getItemId() != null && owningComponent.getItemId() != ''
-                && owningComponentEl && owningComponentEl.id && owningComponentEl.id != owningComponent.getItemId()) {
-                owningComponentLocator = owningComponent.xtype + '#' + owningComponent.getItemId();
+                && owningComponentEl && owningComponentEl.id && owningComponentEl.id != owningComponent.getItemId()
+                && owningComponent.autoGenId == false) {
+                owningComponentLocator = xtype + '#' + owningComponent.getItemId();
             } else {
-                owningComponentLocator = owningComponent.xtype;
+                owningComponentLocator = xtype;
             }
         }
 
@@ -132,7 +138,7 @@ class ComponentLocator {
             element = me.element,
             formattedLocators = {},
             cmp, container, container2, grid, list, tabpanel, panel, config, configs, locator, locatorValue,
-            record, xtypes, locatorExtra;
+            record, xtypes, locatorExtra, xtype;
 
         if (!me.isSupportedApp()) {
             return {
@@ -191,6 +197,9 @@ class ComponentLocator {
             } else {
                 xtypes = [ cmp.xtype ];
             }
+
+            // Properly escape and handle XTypes with dots
+            xtype = cmp.xtype.replace('.', '\\\\.');
 
             for (let supportedConfig of me.supportedConfigs) {
                 try {
@@ -267,22 +276,22 @@ class ComponentLocator {
                             locatorExtra += '{_record}';
 
                             if (typeof(recordId) == 'string') {
-                                locator = cmp.xtype + locatorExtra + '{_record.id=="' + recordId + '"}';
+                                locator = xtype + locatorExtra + '{_record.id=="' + recordId + '"}';
                             } else {
-                                locator = cmp.xtype + locatorExtra + '{_record.id==' + recordId + '}';
+                                locator = xtype + locatorExtra + '{_record.id==' + recordId + '}';
                             }
 
                             me.addLocator(xtypes, locator, container, 1, container);
                             me.addLocator(xtypes, locator, null, 2, container);
 
                             if (recordName) {
-                                locator = cmp.xtype + locatorExtra + '{_record.data.name=="' + recordName.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
+                                locator = xtype + locatorExtra + '{_record.data.name=="' + recordName.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
                                 me.addLocator(xtypes, locator, container, 1, container);
                                 me.addLocator(xtypes, locator, null, 2, container);
                             }
 
                             if (recordText) {
-                                locator = cmp.xtype + locatorExtra + '{_record.data.text=="' + recordText.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
+                                locator = xtype + locatorExtra + '{_record.data.text=="' + recordText.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
                                 me.addLocator(xtypes, locator, container, 1, container);
                                 me.addLocator(xtypes, locator, null, 2, container);
                             }
@@ -293,7 +302,7 @@ class ComponentLocator {
                                 || xtypes.indexOf('pivotgridrow') >= 0)
                                 && cmp.$dataIndex) {
 
-                                locator = cmp.xtype + '[$dataIndex=' + cmp.$dataIndex + ']';
+                                locator = xtype + '[$dataIndex=' + cmp.$dataIndex + ']';
                                 me.addLocator(xtypes, locator, container, 1, container);
                                 me.addLocator(xtypes, locator, null, 2, container);
                             } else {
@@ -302,9 +311,9 @@ class ComponentLocator {
                                 // `container2` is a grid row, which should have a numeric `$dataIndex`.
                                 if (container2 && container2.$dataIndex) {
                                     if (typeof(recordId) == 'string') {
-                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + cmp.xtype + '[dataIndex=' + cmp.dataIndex + ']';
+                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + xtype + '[dataIndex=' + cmp.dataIndex + ']';
                                     } else {
-                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + cmp.xtype + '[dataIndex=' + cmp.dataIndex + ']';
+                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + xtype + '[dataIndex=' + cmp.dataIndex + ']';
                                     }
 
                                     me.addLocator(xtypes, locator, container, 1, container);
@@ -313,12 +322,12 @@ class ComponentLocator {
                             }
                         }
                     } else if (supportedConfig.prop == 'itemId') {
-                        locator = cmp.xtype + '#' + locatorValue;
+                        locator = xtype + '#' + locatorValue;
 
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
                     } else if (supportedConfig.prop != 'record') {
-                        locator = cmp.xtype + '[' + supportedConfig.prop + '=' + locatorValue + ']';
+                        locator = xtype + '[' + supportedConfig.prop + '=' + locatorValue + ']';
 
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
@@ -326,8 +335,8 @@ class ComponentLocator {
                 }
             }
 
-            me.addLocator(xtypes, cmp.xtype, container, 3, container);
-            me.addLocator(xtypes, cmp.xtype, null, 4, container);
+            me.addLocator(xtypes, xtype, container, 3, container);
+            me.addLocator(xtypes, xtype, null, 4, container);
 
             configs = [];
 
