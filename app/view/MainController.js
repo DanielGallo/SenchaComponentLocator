@@ -3,7 +3,7 @@ Ext.define('CL.view.MainController', {
 
     alias: 'controller.main',
 
-    docsUrl: 'http://docs.sencha.com/sencha_test/2.0.2/api/ST.future.{0}.html',
+    docsUrl: 'https://docs.sencha.com/sencha_test/2.1.1/api/ST.future.{0}.html',
     methodSuffix: '#method-{0}',
 
     clipboard: null,
@@ -105,6 +105,15 @@ Ext.define('CL.view.MainController', {
 
         if (locator) {
             xtypes = locator.get('xtypes');
+
+            // Use Grid xtype before all others (otherwise examples will be based on standard Panel or Component)
+            if (xtypes.indexOf('grid') >= 0) {
+                xtypes.splice(0, 0, xtypes.splice(xtypes.indexOf('grid'), 1)[0]);
+            }
+
+            if (xtypes.indexOf('treepanel') >= 0) {
+                xtypes.splice(0, 0, xtypes.splice(xtypes.indexOf('treepanel'), 1)[0]);
+            }
 
             xtypesSearch:
             for (let xtype of xtypes) {
@@ -219,7 +228,7 @@ Ext.define('CL.view.MainController', {
         }
     },
 
-    alignCopyButton(button, elementToAlign) {
+    alignCopyButton: function(button, elementToAlign) {
         button.alignTo(elementToAlign, 'tr-tr', [-5, 5]);
     },
 
