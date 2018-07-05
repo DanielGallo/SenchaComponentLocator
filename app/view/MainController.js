@@ -3,7 +3,7 @@ Ext.define('CL.view.MainController', {
 
     alias: 'controller.main',
 
-    docsUrl: 'https://docs.sencha.com/sencha_test/2.1.1/api/ST.future.{0}.html',
+    docsUrl: 'https://docs.sencha.com/sencha_test/2.2.0/api/ST.future.{0}.html',
     methodSuffix: '#method-{0}',
 
     clipboard: null,
