@@ -331,7 +331,7 @@ class ComponentLocator {
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
                     } else if (supportedConfig.prop != 'record') {
-                        locator = xtype + '[' + supportedConfig.prop + '="' + locatorValue + '"]';
+                        locator = xtype + '[' + supportedConfig.prop + '="' + locatorValue.replace('"', '\\\\"').replace(',', '\\\\,') + '"]';
 
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
