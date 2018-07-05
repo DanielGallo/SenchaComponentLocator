@@ -46,9 +46,13 @@ class ComponentLocator {
         }, {
             prop: 'label'
         }, {
-            prop: 'name'
+            prop: 'fieldLabel'
+        }, {
+            prop: 'boxLabel'
         }, {
             prop: 'reference'
+        }, {
+            prop: 'name'
         }, {
             prop: 'text'
         }, {
