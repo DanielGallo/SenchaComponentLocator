@@ -274,7 +274,7 @@ class ComponentLocator {
                                 // Tag on the dataIndex, and also check the "_record" object exists - it appears it
                                 // may not exist on all cells, which could cause an exception due to referencing
                                 // the "id" when "_record" is null
-                                locatorExtra = '[dataIndex=' + cmp.dataIndex + ']';
+                                locatorExtra = '[dataIndex="' + cmp.dataIndex + '"]';
                             }
 
                             locatorExtra += '{_record}';
@@ -306,7 +306,7 @@ class ComponentLocator {
                                 || xtypes.indexOf('pivotgridrow') >= 0)
                                 && cmp.$dataIndex) {
 
-                                locator = xtype + '[$dataIndex=' + cmp.$dataIndex + ']';
+                                locator = xtype + '[$dataIndex="' + cmp.$dataIndex + '"]';
                                 me.addLocator(xtypes, locator, container, 1, container);
                                 me.addLocator(xtypes, locator, null, 2, container);
                             } else {
@@ -315,9 +315,9 @@ class ComponentLocator {
                                 // `container2` is a grid row, which should have a numeric `$dataIndex`.
                                 if (container2 && container2.$dataIndex) {
                                     if (typeof(recordId) == 'string') {
-                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + xtype + '[dataIndex=' + cmp.dataIndex + ']';
+                                        locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
                                     } else {
-                                        locator = container2.xtype + '[$dataIndex=' + container2.$dataIndex + '] ' + xtype + '[dataIndex=' + cmp.dataIndex + ']';
+                                        locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
                                     }
 
                                     me.addLocator(xtypes, locator, container, 1, container);
@@ -331,7 +331,7 @@ class ComponentLocator {
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
                     } else if (supportedConfig.prop != 'record') {
-                        locator = xtype + '[' + supportedConfig.prop + '=' + locatorValue + ']';
+                        locator = xtype + '[' + supportedConfig.prop + '="' + locatorValue.replace('"', '\\\\"').replace(',', '\\\\,') + '"]';
 
                         me.addLocator(xtypes, locator, container, 1, container);
                         me.addLocator(xtypes, locator, null, 2, container);
