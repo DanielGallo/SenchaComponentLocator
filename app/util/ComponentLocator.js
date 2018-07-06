@@ -84,6 +84,14 @@ class ComponentLocator {
         return false;
     }
 
+    isValidLocatorValue(locator) {
+        return (locator != null
+            && typeof locator !== 'undefined'
+            && !Ext.isObject(locator)
+            && !Ext.isArray(locator)
+            && !Ext.isFunction(locator));
+    }
+
     addLocator(xtypes, locator, container, priority, owningComponent) {
         var me = this,
             owningComponentLocator = null,
@@ -141,7 +149,7 @@ class ComponentLocator {
         var me = this,
             element = me.element,
             formattedLocators = {},
-            cmp, container, container2, grid, list, tabpanel, panel, config, configs, locator, locatorValue,
+            cmp, container, container2, grid, list, tabpanel, panel, formpanel, config, configs, locator, locatorValue,
             record, xtypes, locatorExtra, xtype;
 
         if (!me.isSupportedApp()) {
@@ -153,8 +161,8 @@ class ComponentLocator {
             for (var i = 0; i < 10; i++) {
                 cmp = (element && element.id) ? Ext.getCmp(element.id) : null;
 
-                // If we find a component, then break out of the loop
-                if (cmp) {
+                // If we find a component, then break out of the loop (only if it's not a standalone input component)
+                if (cmp && (!cmp.tag && cmp.tag != 'input')) {
                     break;
                 } else {
                     // Otherwise, reference the parent element, so the next iteration of the loop checks that element for an
@@ -176,6 +184,7 @@ class ComponentLocator {
             grid = cmp.up('grid');
             list = cmp.up('list');
             tabpanel = cmp.up('tabpanel');
+            formpanel = cmp.up('formpanel');
             panel = cmp.up('panel');
 
             config = cmp.config || {};
@@ -185,16 +194,18 @@ class ComponentLocator {
                 container = grid;
             } else if (list) {
                 container = list;
-            } else if (tabpanel) {
-                container = tabpanel;
+            } else if (formpanel) {
+                container = formpanel;
             } else if (panel) {
                 container = panel;
+            } else if (tabpanel) {
+                container = tabpanel;
             } else if (cmp.getField) {
                 container = cmp.getField();
             } else {
                 container = cmp.up('component');
             }
-
+            
             // Create an array of XTypes. (Widget doesn't have "getXTypes()")
             if (cmp.getXTypes) {
                 xtypes = cmp.getXTypes().split('/');
@@ -216,126 +227,119 @@ class ComponentLocator {
                     locatorValue = null;
                 }
 
-                // Make sure the locator value is suitable for use in a locator
-                if (locatorValue != null
-                    && typeof locatorValue !== 'undefined'
-                    && !Ext.isObject(locatorValue)
-                    && !Ext.isArray(locatorValue)
-                    && !Ext.isFunction(locatorValue)) {
+                // If the returned itemId or name matches the element's id, it's just an auto-generated id/name, so we should ignore it.
+                // And if the locator value is null or an empty string, ignore it.
+                if ((locatorValue == null || locatorValue == '')
+                    || (supportedConfig.prop == 'itemId' && locatorValue == element.id)
+                    || (supportedConfig.prop == 'name' && locatorValue.indexOf && locatorValue.indexOf(element.id) == 0)) {
+                    continue;
+                } else if ((xtypes.indexOf('listitem') >= 0
+                    || xtypes.indexOf('simplelistitem') >= 0
+                    || xtypes.indexOf('gridrow') >= 0
+                    || xtypes.indexOf('pivotgridrow') >= 0
+                    || xtypes.indexOf('pivotgridcell') >= 0
+                    || xtypes.indexOf('gridcell') >= 0
+                    || xtypes.indexOf('booleancell') >= 0
+                    || xtypes.indexOf('checkcell') >= 0
+                    || xtypes.indexOf('datecell') >= 0
+                    || xtypes.indexOf('gridcell') >= 0
+                    || xtypes.indexOf('numbercell') >= 0
+                    || xtypes.indexOf('rownumberercell') >= 0
+                    || xtypes.indexOf('summarycell') >= 0
+                    || xtypes.indexOf('textcell') >= 0
+                    || xtypes.indexOf('treecell') >= 0
+                    || xtypes.indexOf('widgetcell') >= 0)
+                    && supportedConfig.prop == 'record' && cmp.getRecord) {
+                    // In the Modern toolkit, ListItem and SimpleListItem are Components.
 
-                    // If the returned itemId matches the element's id, it's just an auto-generated id, so we should ignore it.
-                    // And if the locator value is null or an empty string, ignore it.
-                    if ((supportedConfig.prop == 'itemId' && locatorValue == element.id)
-                        || (locatorValue == null || locatorValue == '')) {
-                        continue;
-                    } else if ((xtypes.indexOf('listitem') >= 0
-                        || xtypes.indexOf('simplelistitem') >= 0
-                        || xtypes.indexOf('gridrow') >= 0
-                        || xtypes.indexOf('pivotgridrow') >= 0
-                        || xtypes.indexOf('pivotgridcell') >= 0
-                        || xtypes.indexOf('gridcell') >= 0
-                        || xtypes.indexOf('booleancell') >= 0
-                        || xtypes.indexOf('checkcell') >= 0
-                        || xtypes.indexOf('datecell') >= 0
-                        || xtypes.indexOf('gridcell') >= 0
-                        || xtypes.indexOf('numbercell') >= 0
-                        || xtypes.indexOf('rownumberercell') >= 0
-                        || xtypes.indexOf('summarycell') >= 0
-                        || xtypes.indexOf('textcell') >= 0
-                        || xtypes.indexOf('treecell') >= 0
-                        || xtypes.indexOf('widgetcell') >= 0)
-                        && supportedConfig.prop == 'record' && cmp.getRecord) {
-                        // In the Modern toolkit, ListItem and SimpleListItem are Components.
+                    record = cmp.getRecord();
 
-                        record = cmp.getRecord();
+                    if (record) {
+                        var recordId = record.getId(),
+                            recordName = record.get('name'),
+                            recordText = record.get('text');
 
-                        if (record) {
-                            var recordId = record.getId(),
-                                recordName = record.get('name'),
-                                recordText = record.get('text');
+                        locatorExtra = '';
 
-                            locatorExtra = '';
+                        // This is a Modern grid cell, so get the dataIndex of the cell
+                        if ((xtypes.indexOf('gridcell') >= 0
+                            || xtypes.indexOf('pivotgridcell') >= 0
+                            || xtypes.indexOf('booleancell') >= 0
+                            || xtypes.indexOf('checkcell') >= 0
+                            || xtypes.indexOf('datecell') >= 0
+                            || xtypes.indexOf('gridcell') >= 0
+                            || xtypes.indexOf('numbercell') >= 0
+                            || xtypes.indexOf('rownumberercell') >= 0
+                            || xtypes.indexOf('summarycell') >= 0
+                            || xtypes.indexOf('textcell') >= 0
+                            || xtypes.indexOf('treecell') >= 0
+                            || xtypes.indexOf('widgetcell') >= 0)
+                            && cmp.dataIndex && cmp.dataIndex != '') {
 
-                            // This is a Modern grid cell, so get the dataIndex of the cell
-                            if ((xtypes.indexOf('gridcell') >= 0
-                                || xtypes.indexOf('pivotgridcell') >= 0
-                                || xtypes.indexOf('booleancell') >= 0
-                                || xtypes.indexOf('checkcell') >= 0
-                                || xtypes.indexOf('datecell') >= 0
-                                || xtypes.indexOf('gridcell') >= 0
-                                || xtypes.indexOf('numbercell') >= 0
-                                || xtypes.indexOf('rownumberercell') >= 0
-                                || xtypes.indexOf('summarycell') >= 0
-                                || xtypes.indexOf('textcell') >= 0
-                                || xtypes.indexOf('treecell') >= 0
-                                || xtypes.indexOf('widgetcell') >= 0)
-                                && cmp.dataIndex && cmp.dataIndex != '') {
+                            // Tag on the dataIndex, and also check the "_record" object exists - it appears it
+                            // may not exist on all cells, which could cause an exception due to referencing
+                            // the "id" when "_record" is null
+                            locatorExtra = '[dataIndex="' + cmp.dataIndex + '"]';
+                        }
 
-                                // Tag on the dataIndex, and also check the "_record" object exists - it appears it
-                                // may not exist on all cells, which could cause an exception due to referencing
-                                // the "id" when "_record" is null
-                                locatorExtra = '[dataIndex="' + cmp.dataIndex + '"]';
-                            }
+                        locatorExtra += '{_record}';
 
-                            locatorExtra += '{_record}';
+                        if (typeof(recordId) == 'string') {
+                            locator = xtype + locatorExtra + '{_record.id=="' + recordId + '"}';
+                        } else {
+                            locator = xtype + locatorExtra + '{_record.id==' + recordId + '}';
+                        }
 
-                            if (typeof(recordId) == 'string') {
-                                locator = xtype + locatorExtra + '{_record.id=="' + recordId + '"}';
-                            } else {
-                                locator = xtype + locatorExtra + '{_record.id==' + recordId + '}';
-                            }
+                        me.addLocator(xtypes, locator, container, 1, container);
+                        me.addLocator(xtypes, locator, null, 2, container);
 
+                        if (recordName) {
+                            locator = xtype + locatorExtra + '{_record.data.name=="' + recordName.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
                             me.addLocator(xtypes, locator, container, 1, container);
                             me.addLocator(xtypes, locator, null, 2, container);
+                        }
 
-                            if (recordName) {
-                                locator = xtype + locatorExtra + '{_record.data.name=="' + recordName.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
-                                me.addLocator(xtypes, locator, container, 1, container);
-                                me.addLocator(xtypes, locator, null, 2, container);
-                            }
+                        if (recordText) {
+                            locator = xtype + locatorExtra + '{_record.data.text=="' + recordText.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
+                            me.addLocator(xtypes, locator, container, 1, container);
+                            me.addLocator(xtypes, locator, null, 2, container);
+                        }
 
-                            if (recordText) {
-                                locator = xtype + locatorExtra + '{_record.data.text=="' + recordText.replace('"', '\\\\"').replace(',', '\\\\,') + '"}';
-                                me.addLocator(xtypes, locator, container, 1, container);
-                                me.addLocator(xtypes, locator, null, 2, container);
-                            }
+                        if ((xtypes.indexOf('listitem') >= 0
+                            || xtypes.indexOf('simplelistitem') >= 0
+                            || xtypes.indexOf('gridrow') >= 0
+                            || xtypes.indexOf('pivotgridrow') >= 0)
+                            && cmp.$dataIndex) {
 
-                            if ((xtypes.indexOf('listitem') >= 0
-                                || xtypes.indexOf('simplelistitem') >= 0
-                                || xtypes.indexOf('gridrow') >= 0
-                                || xtypes.indexOf('pivotgridrow') >= 0)
-                                && cmp.$dataIndex) {
+                            locator = xtype + '[$dataIndex="' + cmp.$dataIndex + '"]';
+                            me.addLocator(xtypes, locator, container, 1, container);
+                            me.addLocator(xtypes, locator, null, 2, container);
+                        } else {
+                            container2 = cmp.parent;
 
-                                locator = xtype + '[$dataIndex="' + cmp.$dataIndex + '"]';
-                                me.addLocator(xtypes, locator, container, 1, container);
-                                me.addLocator(xtypes, locator, null, 2, container);
-                            } else {
-                                container2 = cmp.parent;
-
-                                // `container2` is a grid row, which should have a numeric `$dataIndex`.
-                                if (container2 && container2.$dataIndex) {
-                                    if (typeof(recordId) == 'string') {
-                                        locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
-                                    } else {
-                                        locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
-                                    }
-
-                                    me.addLocator(xtypes, locator, container, 1, container);
-                                    me.addLocator(xtypes, locator, null, 2, container);
+                            // `container2` is a grid row, which should have a numeric `$dataIndex`.
+                            if (container2 && container2.$dataIndex) {
+                                if (typeof(recordId) == 'string') {
+                                    locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
+                                } else {
+                                    locator = container2.xtype + '[$dataIndex="' + container2.$dataIndex + '"] ' + xtype + '[dataIndex="' + cmp.dataIndex + '"]';
                                 }
+
+                                me.addLocator(xtypes, locator, container, 1, container);
+                                me.addLocator(xtypes, locator, null, 2, container);
                             }
                         }
-                    } else if (supportedConfig.prop == 'itemId') {
-                        locator = xtype + '#' + locatorValue;
-
-                        me.addLocator(xtypes, locator, container, 1, container);
-                        me.addLocator(xtypes, locator, null, 2, container);
-                    } else if (supportedConfig.prop != 'record') {
-                        locator = xtype + '[' + supportedConfig.prop + '="' + locatorValue.replace('"', '\\\\"').replace(',', '\\\\,') + '"]';
-
-                        me.addLocator(xtypes, locator, container, 1, container);
-                        me.addLocator(xtypes, locator, null, 2, container);
                     }
+                } else if (supportedConfig.prop == 'itemId' && me.isValidLocatorValue(locatorValue)) {
+                    locator = xtype + '#' + locatorValue;
+
+                    me.addLocator(xtypes, locator, container, 1, container);
+                    me.addLocator(xtypes, locator, null, 2, container);
+                } else if (supportedConfig.prop != 'record' && me.isValidLocatorValue(locatorValue)) {
+                    locator = xtype + '[' + supportedConfig.prop + '="' + locatorValue.replace('"', '\\\\"').replace(',', '\\\\,') + '"]';
+
+                    me.addLocator(xtypes, locator, container, 1, container);
+                    me.addLocator(xtypes, locator, null, 2, container);
                 }
             }
 
